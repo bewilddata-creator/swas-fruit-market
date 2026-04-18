@@ -2,11 +2,13 @@
 ## Hobby Farm Fruit Stock & Booking App
 ### ระบบจองผลไม้สวนเกษตร
 
-**Version 1.4** · April 2026
+**Version 1.5** · April 2026
 
 ---
 
 ### Changelog
+
+**v1.5** — Small "เข้าสู่ระบบ" link added to the public header (top-right) so admins don't have to remember a separate URL. M3–M5 implemented: admin shell with bottom tab bar + top gear/users/settings shortcuts, catalogue CRUD with client-side resize → WebP upload to Supabase Storage, weekly stock panel with stale-week banner, user management (owner-only), settings, booking list + form + detail with the four pending actions, atomic booking save via `save_booking` RPC (Postgres `SELECT … FOR UPDATE` + retry-once on lock conflict), checkout (walk-in + from-booking), receipt view with void watermark, history with per-week + all-weeks zipped CSV export (UTF-8 BOM).
 
 **v1.4** — Public fruit grid is now 2 columns on phones, 4 columns on tablets and desktop (was 1 / 2). Repo created on GitHub as `swas-fruit-market`.
 

@@ -18,11 +18,19 @@ export default async function HomePage() {
 
   return (
     <main className="public-root min-h-screen pb-4">
-      <header className="px-4 pt-6 pb-4 md:px-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-ink">{shopName ?? 'สวนผลไม้'}</h1>
-        {weekLabel && (
-          <p className="text-lg text-muted mt-1">ผลไม้สัปดาห์ที่ {weekLabel}</p>
-        )}
+      <header className="px-4 pt-6 pb-4 md:px-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-ink">{shopName ?? 'สวนผลไม้'}</h1>
+          {weekLabel && (
+            <p className="text-lg text-muted mt-1">ผลไม้สัปดาห์ที่ {weekLabel}</p>
+          )}
+        </div>
+        <a
+          href="/admin/login"
+          className="shrink-0 text-sm text-muted hover:text-brand underline-offset-4 hover:underline mt-2"
+        >
+          เข้าสู่ระบบ
+        </a>
       </header>
 
       {stock.items.length === 0 ? (
