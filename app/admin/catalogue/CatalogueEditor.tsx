@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { compressAndUpload } from '@/lib/upload-image';
 import type { Fruit } from '@/lib/types';
 
+const UNITS = ['ลูก', 'กิโล', 'กรัม', 'ขีด'];
+
 type Draft = Partial<Fruit> & { id?: string };
 
 export function CatalogueEditor({ initial }: { initial: Fruit[] }) {
@@ -103,11 +105,17 @@ function FruitEditor({ draft, onCancel, onSave }: { draft: Draft; onCancel: () =
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="text-sm text-muted">หน่วยขาย</span>
-            <input value={f.selling_unit ?? ''} onChange={(e) => setF({ ...f, selling_unit: e.target.value })} placeholder="ลูก / กิโล" className="mt-1 w-full border rounded px-3 py-2" />
+            <select value={f.selling_unit ?? ''} onChange={(e) => setF({ ...f, selling_unit: e.target.value })} className="mt-1 w-full border rounded px-3 py-2">
+              <option value="">—</option>
+              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
           </label>
           <label className="block">
             <span className="text-sm text-muted">หน่วยสต็อก</span>
-            <input value={f.stock_unit ?? ''} onChange={(e) => setF({ ...f, stock_unit: e.target.value })} className="mt-1 w-full border rounded px-3 py-2" />
+            <select value={f.stock_unit ?? ''} onChange={(e) => setF({ ...f, stock_unit: e.target.value })} className="mt-1 w-full border rounded px-3 py-2">
+              <option value="">—</option>
+              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
           </label>
         </div>
         <label className="block">
