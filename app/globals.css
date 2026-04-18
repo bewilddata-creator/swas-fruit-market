@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAFAFA;
+}
+
+html, body {
+  background: var(--bg);
+  color: #111111;
+}
+
+/* Public view large typography */
+.public-root {
+  font-size: 20px;
+  line-height: 1.6;
+}
