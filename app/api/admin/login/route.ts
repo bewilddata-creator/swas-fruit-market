@@ -46,10 +46,11 @@ export async function POST(req: Request) {
   }
 
   const sb = supabaseAdmin();
+  const escaped = String(name).replace(/[%_\\]/g, (c) => '\\' + c);
   const { data: user } = await sb
     .from('admin_users')
     .select('id, name, password_hash, role, session_version, deleted_at')
-    .eq('name', name)
+    .ilike('name', escaped)
     .is('deleted_at', null)
     .maybeSingle();
 
