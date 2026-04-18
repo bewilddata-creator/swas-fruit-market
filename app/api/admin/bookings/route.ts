@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   const g = await requireAdmin();
   if (!g.ok) return g.response;
   const { customer_name, contact, items } = await req.json().catch(() => ({}));
-  if (!customer_name || !contact || !Array.isArray(items) || items.length === 0) {
+  if (!customer_name || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: 'ข้อมูลไม่ครบ' }, { status: 400 });
   }
   const sb = supabaseAdmin();
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       p_booking_id: null,
       p_week_id: week.id,
       p_customer_name: customer_name,
-      p_contact: contact,
+      p_contact: contact ?? '',
       p_items: items,
       p_created_by: g.session.admin_id,
     });

@@ -68,7 +68,7 @@ export function BookingForm({
           <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full border rounded px-3 py-2" />
         </label>
         <label className="block">
-          <span className="text-sm text-muted">เบอร์โทร / LINE ID</span>
+          <span className="text-sm text-muted">เบอร์โทร / LINE ID <span className="text-xs">(ไม่บังคับ)</span></span>
           <input value={contact} onChange={(e) => setContact(e.target.value)} className="mt-1 w-full border rounded px-3 py-2" />
         </label>
       </div>
@@ -106,7 +106,7 @@ export function BookingForm({
           <div className="text-sm text-muted">รวม (ไม่รวมรายการตามน้ำหนัก)</div>
           <div className="text-xl font-bold">{total.toLocaleString()} บาท</div>
         </div>
-        <button onClick={save} disabled={busy || !name || !contact || lines.length === 0} className="bg-brand text-white px-5 py-2 rounded disabled:opacity-60">
+        <button onClick={save} disabled={busy || !name || lines.length === 0} className="bg-brand text-white px-5 py-2 rounded disabled:opacity-60">
           {busy ? 'กำลังบันทึก...' : 'บันทึก'}
         </button>
       </div>

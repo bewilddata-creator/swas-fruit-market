@@ -102,8 +102,9 @@ export function CheckoutForm({ fruits, booking }: { fruits: Fruit[]; booking: Bo
       <div className="bg-white rounded-lg shadow-sm p-4 space-y-3">
         {lines.map((l, i) => {
           const f = fruitFor(l.fruit_id);
+          const priceUnit = f ? (f.pricing_mode === 'per_weight' ? f.stock_unit : f.selling_unit) : '';
           return (
-            <div key={i} className="space-y-1">
+            <div key={i} className="border rounded-md p-3 space-y-2 bg-surface">
               <div className="flex items-end gap-2">
                 <label className="flex-1 min-w-0">
                   <span className="text-xs text-muted">ผลไม้</span>
@@ -111,19 +112,32 @@ export function CheckoutForm({ fruits, booking }: { fruits: Fruit[]; booking: Bo
                     {fruits.map((f) => <option key={f.id} value={f.id}>{f.name_th}</option>)}
                   </select>
                 </label>
-                <label className="w-20">
-                  <span className="text-xs text-muted">จำนวน</span>
-                  <input type="number" min={0} step="0.01" value={l.qty} onChange={(e) => update(i, { qty: Number(e.target.value) })} className="mt-1 w-full border rounded px-2 py-2" />
-                </label>
-                {f?.pricing_mode === 'per_weight' && (
-                  <label className="w-24">
-                    <span className="text-xs text-muted">น้ำหนัก (กก.)</span>
-                    <input type="number" min={0} step="0.01" value={l.weight_kg ?? ''} onChange={(e) => update(i, { weight_kg: Number(e.target.value) })} className="mt-1 w-full border rounded px-2 py-2" />
-                  </label>
-                )}
-                <button onClick={() => remove(i)} className="text-danger pb-2">✕</button>
+                <button onClick={() => remove(i)} className="text-danger pb-2 shrink-0" aria-label="ลบแถว">✕</button>
               </div>
-              <div className="text-xs text-muted text-right">= {lineTotal(l).toLocaleString()} บาท</div>
+              <div className="grid grid-cols-4 gap-2 text-sm">
+                <div>
+                  <div className="text-xs text-muted">จำนวน</div>
+                  <input type="number" min={0} step="0.01" value={l.qty} onChange={(e) => update(i, { qty: Number(e.target.value) })} className="mt-1 w-full border rounded px-2 py-1.5" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted">หน่วย</div>
+                  <div className="mt-1 px-2 py-1.5 text-muted">{f?.selling_unit ?? '—'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted">ราคาต่อหน่วย</div>
+                  <div className="mt-1 px-2 py-1.5">{f ? `${f.price_value}฿/${priceUnit}` : '—'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted">รวม</div>
+                  <div className="mt-1 px-2 py-1.5 font-bold">{lineTotal(l).toLocaleString()}฿</div>
+                </div>
+              </div>
+              {f?.pricing_mode === 'per_weight' && (
+                <label className="block">
+                  <span className="text-xs text-warn">* น้ำหนักจริง (กก.)</span>
+                  <input type="number" min={0} step="0.01" value={l.weight_kg ?? ''} onChange={(e) => update(i, { weight_kg: Number(e.target.value) })} className="mt-1 w-32 border rounded px-2 py-1.5" />
+                </label>
+              )}
             </div>
           );
         })}
