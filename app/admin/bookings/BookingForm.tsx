@@ -89,9 +89,12 @@ export function BookingForm({
                   ))}
                 </select>
               </label>
-              <label className="w-24">
+              <label className="w-28">
                 <span className="text-xs text-muted">จำนวน</span>
-                <input type="number" min={0} step="0.01" value={l.qty} onChange={(e) => update(i, { qty: Number(e.target.value) })} className="mt-1 w-full border rounded px-2 py-2" />
+                <div className="mt-1 flex items-stretch border rounded overflow-hidden">
+                  <input type="number" min={0} step="0.01" value={l.qty} onChange={(e) => update(i, { qty: Number(e.target.value) })} className="w-full px-2 py-2 outline-none" />
+                  <span className="px-2 py-2 text-xs text-muted bg-surface border-l">{f?.stock_unit ?? ''}</span>
+                </div>
               </label>
               <button onClick={() => removeLine(i)} className="text-danger pb-2" aria-label="ลบแถว">✕</button>
             </div>

@@ -85,10 +85,9 @@ export async function GET(req: Request) {
   const wk = url.searchParams.get('week');
   const sb = supabaseAdmin();
 
-  const weekQ = sb.from('weeks').select('id, start_date, is_active').order('start_date', { ascending: false });
-  if (wk) weekQ.eq('id', wk);
-  else weekQ.eq('is_active', false);
-  const { data: weeks } = await weekQ;
+  let weekQ = sb.from('weeks').select('id, start_date, is_active');
+  weekQ = wk ? weekQ.eq('id', wk) : weekQ.eq('is_active', false);
+  const { data: weeks } = await weekQ.order('start_date', { ascending: false });
   if (!weeks || weeks.length === 0) return NextResponse.json({ error: 'no weeks' }, { status: 404 });
 
   const zip = new JSZip();

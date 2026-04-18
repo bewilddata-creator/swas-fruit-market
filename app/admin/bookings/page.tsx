@@ -12,13 +12,12 @@ export default async function BookingsPage({ searchParams }: { searchParams: { s
     return <p className="text-muted">ยังไม่มีสัปดาห์ที่เปิดขาย</p>;
   }
 
-  const q = sb
+  let q = sb
     .from('bookings')
     .select('id, customer_name, contact, status, created_at, booking_items(qty, name_snapshot, price_snapshot, pricing_mode_snapshot, unit_snapshot), admin:created_by(name)')
-    .eq('week_id', week.id)
-    .order('created_at', { ascending: false });
-  if (status !== 'all') q.eq('status', status);
-  const { data } = await q;
+    .eq('week_id', week.id);
+  if (status !== 'all') q = q.eq('status', status);
+  const { data } = await q.order('created_at', { ascending: false });
 
   const tabs = [
     { k: 'pending', label: 'รอดำเนินการ' },
