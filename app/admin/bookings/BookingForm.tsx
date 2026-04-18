@@ -79,7 +79,7 @@ export function BookingForm({
         {lines.map((l, i) => {
           const f = fruitFor(l.fruit_id);
           const isWeight = f?.pricing_mode === 'per_weight';
-          const unitLabel = isWeight ? (f?.selling_unit ?? '') : (f?.stock_unit ?? '');
+          const unitLabel = f?.stock_unit ?? '';
           return (
             <div key={i} className="border rounded-md p-2 bg-surface space-y-1">
               <div className="flex items-end gap-2">
@@ -104,7 +104,7 @@ export function BookingForm({
               </div>
               {isWeight && (
                 <p className="text-[11px] text-warn pl-1">
-                  คิดตามน้ำหนัก ({f?.price_value}฿/{f?.stock_unit}) — ราคาคำนวณตอนชั่งที่เช็คเอาต์
+                  คิดตามน้ำหนัก ({f?.price_value}฿/กก.) — ราคาคำนวณตอนชั่งที่เช็คเอาต์
                 </p>
               )}
             </div>

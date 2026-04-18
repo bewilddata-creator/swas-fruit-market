@@ -141,14 +141,14 @@ export function CheckoutForm({ fruits, booking }: { fruits: Fruit[]; booking: Bo
                   <div className="flex items-center gap-2 text-sm bg-white border rounded px-3 py-2">
                     <span className="text-xs text-muted">ลูกค้าจอง</span>
                     <input type="number" min={0} step="0.01" value={l.qty} onChange={(e) => update(i, { qty: Number(e.target.value) })} className="w-16 border rounded px-2 py-1 text-center" />
-                    <span>{f.selling_unit}</span>
+                    <span>{f.stock_unit}</span>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end text-sm">
                     <label>
                       <div className="text-xs text-warn">น้ำหนักจริง (กก.)</div>
                       <input type="number" min={0} step="0.01" value={l.weight_kg ?? ''} onChange={(e) => update(i, { weight_kg: Number(e.target.value) })} className="mt-1 w-full border rounded px-2 py-1.5 bg-white" placeholder="เช่น 2.3" />
                     </label>
-                    <div className="pb-1.5 text-muted">× {f.price_value}฿/{f.stock_unit} =</div>
+                    <div className="pb-1.5 text-muted">× {f.price_value}฿/กก. =</div>
                     <div className="pb-1.5 font-bold text-right">{lineTotal(l).toLocaleString()}฿</div>
                   </div>
                 </div>
