@@ -39,7 +39,7 @@ export default async function HomePage() {
         </div>
       ) : (
         <>
-          <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-2 md:px-4">
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 px-2 md:px-4 max-w-5xl mx-auto">
             {stock.items.slice(0, midIndex).map((item, i) => (
               <FruitCard key={item.fruit_id} item={item} priority={i < 4} />
             ))}
@@ -51,7 +51,7 @@ export default async function HomePage() {
             </p>
           )}
 
-          <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-2 md:px-4">
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 px-2 md:px-4 max-w-5xl mx-auto">
             {stock.items.slice(midIndex).map((item) => (
               <FruitCard key={item.fruit_id} item={item} />
             ))}

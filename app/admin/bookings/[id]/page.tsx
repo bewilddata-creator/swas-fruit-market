@@ -33,7 +33,9 @@ export default async function BookingDetail({ params, searchParams }: { params: 
 
   const items = ((b as any).booking_items ?? []) as Array<any>;
   const hasPerWeight = items.some((i) => i.pricing_mode_snapshot === 'per_weight');
-  const total = items.reduce((s, i) => s + Number(i.qty) * Number(i.price_snapshot), 0);
+  const perUnitTotal = items
+    .filter((i) => i.pricing_mode_snapshot !== 'per_weight')
+    .reduce((s, i) => s + Number(i.qty) * Number(i.price_snapshot), 0);
 
   return (
     <div className="max-w-2xl">
@@ -52,20 +54,27 @@ export default async function BookingDetail({ params, searchParams }: { params: 
                 <div className="font-medium">{i.name_snapshot}</div>
                 <div className="text-xs text-muted">
                   {i.pricing_mode_snapshot === 'per_weight'
-                    ? `${i.qty} ${i.unit_snapshot} · ${i.price_snapshot} บาท/กก (คิดตามน้ำหนัก)`
+                    ? `${i.qty} ${i.unit_snapshot} · คิดตามน้ำหนัก ${i.price_snapshot} บาท/กก.`
                     : `${i.qty} × ${i.price_snapshot} บาท`}
                 </div>
               </div>
               <div className="font-bold">
-                {i.pricing_mode_snapshot === 'per_weight' ? '—' : (Number(i.qty) * Number(i.price_snapshot)).toLocaleString() + ' ฿'}
+                {i.pricing_mode_snapshot === 'per_weight'
+                  ? <span className="text-warn text-xs">คิดตอนชั่ง</span>
+                  : (Number(i.qty) * Number(i.price_snapshot)).toLocaleString() + ' ฿'}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-3 pt-3 border-t flex items-center justify-between">
-          <span className="text-muted">รวม</span>
-          <span className="text-xl font-bold">{hasPerWeight ? 'คิดตามน้ำหนัก' : total.toLocaleString() + ' บาท'}</span>
+        <div className="mt-3 pt-3 border-t">
+          <div className="flex items-center justify-between">
+            <span className="text-muted">รวม (ราคาต่อหน่วย)</span>
+            <span className="text-xl font-bold">{perUnitTotal.toLocaleString()} บาท</span>
+          </div>
+          {hasPerWeight && (
+            <p className="text-xs text-warn mt-1">+ จะมียอดเพิ่มจากรายการที่คิดตามน้ำหนัก</p>
+          )}
         </div>
 
         {(b as any).admin?.name && (
