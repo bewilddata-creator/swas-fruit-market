@@ -37,7 +37,7 @@ returns table(fruit_id uuid, booked numeric) as $$
     select fruit_id as fid, q from r
   ) x
   group by fid;
-$$ language sql stable;
+$$ language sql stable security definer set search_path = public, pg_temp;
 
 -- Atomic booking save (create or edit).
 -- items is jsonb array of {fruit_id, qty}.
@@ -49,7 +49,11 @@ create or replace function save_booking(
   p_contact text,
   p_items jsonb,                   -- [{fruit_id, qty}]
   p_created_by uuid
-) returns uuid as $$
+) returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
 declare
   v_booking_id uuid := p_booking_id;
   v_item jsonb;
@@ -149,4 +153,4 @@ begin
 
   return v_booking_id;
 end;
-$$ language plpgsql;
+$$;
