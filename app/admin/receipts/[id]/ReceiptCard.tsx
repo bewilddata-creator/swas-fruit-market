@@ -85,18 +85,18 @@ export function ReceiptCard({
           </div>
           {items.map((i, idx) => {
             const isWeight = i.pricing_mode_snapshot === 'per_weight';
-            const priceUnit = isWeight ? (i.stock_unit_snapshot ?? 'กก.') : i.unit_snapshot;
+            const qtyDisplay = isWeight ? (Number(i.weight_kg ?? 0) || 0) : i.qty;
             return (
               <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-2 py-1.5 text-sm border-b last:border-0 items-baseline">
                 <div>
                   <div className="font-medium">{i.name_snapshot}</div>
                   {isWeight && (
-                    <div className="text-[11px] text-muted">({i.weight_kg ?? 0} กก.)</div>
+                    <div className="text-[11px] text-muted">({i.qty} {i.stock_unit_snapshot ?? ''})</div>
                   )}
                 </div>
-                <div className="text-right">{i.qty}</div>
+                <div className="text-right">{qtyDisplay}</div>
                 <div className="text-right text-muted">{i.unit_snapshot}</div>
-                <div className="text-right">{Number(i.price_snapshot).toLocaleString()}/{priceUnit}</div>
+                <div className="text-right">{Number(i.price_snapshot).toLocaleString()}</div>
                 <div className="text-right font-bold">{Number(i.line_total ?? 0).toLocaleString()}</div>
               </div>
             );
