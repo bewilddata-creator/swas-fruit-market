@@ -19,5 +19,5 @@ export function formatPrice(value: number, mode: 'per_unit' | 'per_weight', sell
   if (mode === 'per_unit') {
     return `ราคา ${value} บาท / ${sellingUnit}`;
   }
-  return `ราคา ${value} บาท / กก. · จองเป็น${stockUnit}`;
+  return `ราคา ${value} บาท / ${sellingUnit} · จองเป็น${stockUnit}`;
 }

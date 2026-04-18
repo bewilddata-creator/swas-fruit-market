@@ -104,7 +104,7 @@ export function BookingForm({
               </div>
               {isWeight && (
                 <p className="text-[11px] text-warn pl-1">
-                  คิดตามน้ำหนัก ({f?.price_value}฿/กก.) — ราคาคำนวณตอนชั่งที่เช็คเอาต์
+                  คิดตามน้ำหนัก ({f?.price_value}฿/{f?.selling_unit}) — ราคาคำนวณตอนชั่งที่เช็คเอาต์
                 </p>
               )}
             </div>

@@ -9,7 +9,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
   const sb = supabaseAdmin();
   const { data: b } = await sb
     .from('bookings')
-    .select('id, week_id, customer_name, contact, status, created_at, updated_at, booking_items(id, fruit_id, qty, unit_snapshot, price_snapshot, pricing_mode_snapshot, name_snapshot), admin:created_by(name)')
+    .select('id, week_id, customer_name, contact, status, created_at, updated_at, booking_items(id, fruit_id, qty, unit_snapshot, price_snapshot, pricing_mode_snapshot, name_snapshot, fruits:fruit_id(stock_unit)), admin:created_by(name)')
     .eq('id', params.id)
     .maybeSingle();
   if (!b) notFound();
@@ -48,23 +48,27 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <p className="text-muted">{b.contact}</p>
 
         <div className="mt-3 divide-y">
-          {items.map((i) => (
-            <div key={i.id} className="py-2 flex items-center justify-between text-sm">
-              <div>
-                <div className="font-medium">{i.name_snapshot}</div>
-                <div className="text-xs text-muted">
-                  {i.pricing_mode_snapshot === 'per_weight'
-                    ? `${i.qty} ${i.unit_snapshot} · คิดตามน้ำหนัก ${i.price_snapshot} บาท/กก.`
-                    : `${i.qty} × ${i.price_snapshot} บาท`}
+          {items.map((i) => {
+            const isWeight = i.pricing_mode_snapshot === 'per_weight';
+            const qtyUnit = isWeight ? (i.fruits?.stock_unit ?? i.unit_snapshot) : i.unit_snapshot;
+            return (
+              <div key={i.id} className="py-2 flex items-center justify-between text-sm">
+                <div>
+                  <div className="font-medium">{i.name_snapshot}</div>
+                  <div className="text-xs text-muted">
+                    {isWeight
+                      ? `${i.qty} ${qtyUnit} · คิดตามน้ำหนัก ${i.price_snapshot} บาท/${i.unit_snapshot}`
+                      : `${i.qty} × ${i.price_snapshot} บาท`}
+                  </div>
+                </div>
+                <div className="font-bold">
+                  {isWeight
+                    ? <span className="text-warn text-xs">คิดตอนชั่ง</span>
+                    : (Number(i.qty) * Number(i.price_snapshot)).toLocaleString() + ' ฿'}
                 </div>
               </div>
-              <div className="font-bold">
-                {i.pricing_mode_snapshot === 'per_weight'
-                  ? <span className="text-warn text-xs">คิดตอนชั่ง</span>
-                  : (Number(i.qty) * Number(i.price_snapshot)).toLocaleString() + ' ฿'}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-3 pt-3 border-t">
