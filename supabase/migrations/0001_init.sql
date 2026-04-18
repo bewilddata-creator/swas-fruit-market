@@ -143,8 +143,7 @@ create policy "public read settings" on settings for select to anon using (true)
 
 -- admin_users: no anon access (service role bypasses RLS)
 
--- Seed a placeholder owner. REPLACE the hash before production.
--- Generate with: node -e "console.log(require('bcryptjs').hashSync('changeme',10))"
+-- Seed owner. Password hash is bcrypt; regenerate with scripts/hash-password.mjs.
 insert into admin_users (name, password_hash, role)
-select 'Owner', '$2a$10$REPLACE_ME_WITH_REAL_BCRYPT_HASH_XXXXXXXXXXXXXXXXXXXXXX', 'owner'
+select 'Owner', '$2a$10$Tmt0ZUp7bjpypitx8tP.n.SCMKhtNRZscZiFheDFfqI55huAU69Rq', 'owner'
 where not exists (select 1 from admin_users where role = 'owner');
