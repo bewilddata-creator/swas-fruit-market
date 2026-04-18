@@ -40,7 +40,7 @@ export function FruitCard({ item, priority }: { item: PublicStockItem; priority?
         </p>
       </div>
 
-      <div className={`shrink-0 px-3 md:px-4 flex flex-col items-center justify-center text-center ${soldOut ? 'bg-danger/10' : 'bg-brand-light'}`}>
+      <div className={`shrink-0 w-20 md:w-24 flex flex-col items-center justify-center text-center ${soldOut ? 'bg-danger/10' : 'bg-brand-light'}`}>
         {soldOut ? (
           <>
             <span className="text-danger font-black text-lg md:text-xl leading-none">หมดแล้ว</span>
