@@ -53,8 +53,8 @@ create or replace function save_booking(
 declare
   v_booking_id uuid := p_booking_id;
   v_item jsonb;
-  v_fruit record;
-  v_stock record;
+  v_fruit fruits%ROWTYPE;
+  v_stock week_stock%ROWTYPE;
   v_current_booked numeric;
   v_own_qty numeric;
   v_available numeric;
