@@ -3,87 +3,271 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-type Fruit = { id: string; name_th: string; selling_unit: string; stock_unit: string; pricing_mode: 'per_unit' | 'per_weight' };
-type Row = { fruit_id: string; stock_qty: number; price_value: number; notes?: string | null };
+type Fruit = {
+  id: string;
+  name_th: string;
+  selling_unit: string;
+  stock_unit: string;
+  pricing_mode: 'per_unit' | 'per_weight';
+  image_url: string | null;
+};
 
-export function StockPanel({ weekId, fruits, initialRows }: { weekId: string; fruits: Fruit[]; initialRows: Row[] }) {
+type ActiveRow = {
+  fruit: Fruit;
+  stock_qty: number;
+  price_value: number;
+  booked: number;
+  sold: number;
+};
+
+type RowState = {
+  fruit_id: string;
+  delta: string; // string so user can type -, empty, etc.
+  price: string;
+};
+
+export function StockPanel({
+  weekId,
+  activeFruits,
+  notAddedFruits,
+}: {
+  weekId: string;
+  activeFruits: ActiveRow[];
+  notAddedFruits: Fruit[];
+}) {
   const router = useRouter();
-  const initialMap = new Map(initialRows.map((r) => [r.fruit_id, r]));
-  const [state, setState] = useState(
-    fruits.map((f) => {
-      const r = initialMap.get(f.id);
-      return { fruit: f, included: !!r, stock_qty: r?.stock_qty ?? 0, price_value: r?.price_value ?? 0 };
-    })
-  );
+  const [rows, setRows] = useState<Record<string, RowState>>(() => {
+    const o: Record<string, RowState> = {};
+    for (const a of activeFruits) {
+      o[a.fruit.id] = { fruit_id: a.fruit.id, delta: '', price: String(a.price_value) };
+    }
+    return o;
+  });
+  const [addDraft, setAddDraft] = useState<{ fruit_id: string; qty: string; price: string }>({
+    fruit_id: notAddedFruits[0]?.id ?? '',
+    qty: '',
+    price: '',
+  });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  function update(idx: number, patch: Partial<(typeof state)[number]>) {
-    setState((s) => s.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  function update(fruitId: string, patch: Partial<RowState>) {
+    setRows((r) => ({ ...r, [fruitId]: { ...r[fruitId], ...patch } }));
   }
 
   async function save() {
-    setBusy(true);
-    setMsg(null);
-    const items = state.filter((r) => r.included).map((r) => ({
-      fruit_id: r.fruit.id,
-      stock_qty: Number(r.stock_qty),
-      price_value: Number(r.price_value),
-    }));
+    setBusy(true); setMsg(null);
+    const updates = Object.values(rows)
+      .map((r) => ({
+        fruit_id: r.fruit_id,
+        delta: Number(r.delta || 0),
+        price: Number(r.price || 0),
+      }))
+      .filter((u) => u.delta !== 0 || true); // always send price
+
+    const adds: Array<{ fruit_id: string; stock_qty: number; price: number }> = [];
+    if (addDraft.fruit_id && addDraft.qty) {
+      adds.push({
+        fruit_id: addDraft.fruit_id,
+        stock_qty: Number(addDraft.qty),
+        price: Number(addDraft.price || 0),
+      });
+    }
+
     const r = await fetch('/api/admin/stock', {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ week_id: weekId, items }),
+      body: JSON.stringify({ week_id: weekId, updates, adds }),
     });
+    const d = await r.json().catch(() => ({}));
     setBusy(false);
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      setMsg(d.error ?? 'บันทึกไม่สำเร็จ');
-      return;
-    }
+    if (!r.ok) { setMsg(d.error ?? 'บันทึกไม่สำเร็จ'); return; }
     setMsg('บันทึกแล้ว');
+    setAddDraft({ fruit_id: notAddedFruits[0]?.id ?? '', qty: '', price: '' });
     router.refresh();
   }
 
-  if (fruits.length === 0) {
-    return <p className="text-muted">ยังไม่มีผลไม้ในคลัง — ไปที่ <a className="text-brand underline" href="/admin/catalogue">คลังผลไม้</a> เพื่อเพิ่ม</p>;
+  async function removeRow(fruitId: string, name: string) {
+    if (!confirm(`เอา "${name}" ออกจากสัปดาห์นี้?`)) return;
+    const r = await fetch('/api/admin/stock', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ week_id: weekId, fruit_id: fruitId }),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      alert(d.error ?? 'เอาออกไม่สำเร็จ');
+      return;
+    }
+    router.refresh();
   }
 
   return (
-    <div className="space-y-2">
-      {state.map((r, i) => (
-        <div key={r.fruit.id} className="bg-white rounded-lg shadow-sm p-3 flex flex-col sm:flex-row sm:items-center gap-2">
-          <label className="flex items-center gap-2 sm:w-56">
-            <input type="checkbox" checked={r.included} onChange={(e) => update(i, { included: e.target.checked })} />
-            <span className="font-medium">{r.fruit.name_th}</span>
-          </label>
-          <div className="flex items-center gap-2 text-sm flex-1">
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              disabled={!r.included}
-              value={r.stock_qty}
-              onChange={(e) => update(i, { stock_qty: Number(e.target.value) })}
-              className="w-24 border rounded px-2 py-1"
-            />
-            <span className="text-muted">{r.fruit.stock_unit}</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              disabled={!r.included}
-              value={r.price_value}
-              onChange={(e) => update(i, { price_value: Number(e.target.value) })}
-              className="w-24 border rounded px-2 py-1"
-            />
-            <span className="text-muted">
-              บาท/{r.fruit.pricing_mode === 'per_weight' ? r.fruit.stock_unit : r.fruit.selling_unit}
-            </span>
+    <div className="space-y-6">
+      {/* Desktop/tablet table */}
+      <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-surface text-muted text-xs">
+            <tr>
+              <th className="text-left px-3 py-2">ผลไม้</th>
+              <th className="text-right px-3 py-2">สต็อก</th>
+              <th className="text-right px-3 py-2">จอง</th>
+              <th className="text-right px-3 py-2">ขายแล้ว</th>
+              <th className="text-right px-3 py-2">คงเหลือ</th>
+              <th className="text-right px-3 py-2">ราคา</th>
+              <th className="text-right px-3 py-2">+/- สต็อก</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {activeFruits.map((a) => {
+              const r = rows[a.fruit.id];
+              const remaining = a.stock_qty - a.booked - a.sold;
+              const priceUnit = a.fruit.pricing_mode === 'per_weight' ? a.fruit.selling_unit : a.fruit.selling_unit;
+              return (
+                <tr key={a.fruit.id} className="border-t">
+                  <td className="px-3 py-2">
+                    <div className="font-medium">{a.fruit.name_th}</div>
+                    <div className="text-xs text-muted">{a.fruit.stock_unit}</div>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{a.stock_qty}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-warn">{a.booked}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-brand">{a.sold}</td>
+                  <td className={`px-3 py-2 text-right tabular-nums font-bold ${remaining <= 0 ? 'text-danger' : ''}`}>{remaining}</td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <input
+                        type="number" min={0} step="0.01"
+                        value={r.price}
+                        onChange={(e) => update(a.fruit.id, { price: e.target.value })}
+                        className="w-20 border rounded px-2 py-1 text-right"
+                      />
+                      <span className="text-xs text-muted">/{priceUnit}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <input
+                      type="number" step="0.01"
+                      placeholder="0"
+                      value={r.delta}
+                      onChange={(e) => update(a.fruit.id, { delta: e.target.value })}
+                      className="w-20 border rounded px-2 py-1 text-right"
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <button onClick={() => removeRow(a.fruit.id, a.fruit.name_th)} className="text-danger text-xs">✕</button>
+                  </td>
+                </tr>
+              );
+            })}
+            {activeFruits.length === 0 && (
+              <tr><td colSpan={8} className="px-3 py-6 text-center text-muted">ยังไม่มีผลไม้ในสัปดาห์นี้ — เพิ่มด้านล่าง</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-2">
+        {activeFruits.map((a) => {
+          const r = rows[a.fruit.id];
+          const remaining = a.stock_qty - a.booked - a.sold;
+          return (
+            <div key={a.fruit.id} className="bg-white rounded-lg shadow-sm p-3 space-y-2">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-bold">{a.fruit.name_th}</div>
+                  <div className="text-xs text-muted">{a.fruit.stock_unit}</div>
+                </div>
+                <button onClick={() => removeRow(a.fruit.id, a.fruit.name_th)} className="text-danger text-xs">✕ เอาออก</button>
+              </div>
+              <div className="grid grid-cols-4 gap-1 text-center text-xs">
+                <div className="bg-surface rounded p-1">
+                  <div className="text-muted">สต็อก</div>
+                  <div className="font-bold text-ink">{a.stock_qty}</div>
+                </div>
+                <div className="bg-surface rounded p-1">
+                  <div className="text-muted">จอง</div>
+                  <div className="font-bold text-warn">{a.booked}</div>
+                </div>
+                <div className="bg-surface rounded p-1">
+                  <div className="text-muted">ขาย</div>
+                  <div className="font-bold text-brand">{a.sold}</div>
+                </div>
+                <div className={`rounded p-1 ${remaining <= 0 ? 'bg-danger/10' : 'bg-brand-light'}`}>
+                  <div className="text-muted">เหลือ</div>
+                  <div className={`font-bold ${remaining <= 0 ? 'text-danger' : 'text-brand'}`}>{remaining}</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <label className="flex-1 text-xs">
+                  <div className="text-muted mb-0.5">ราคา</div>
+                  <input
+                    type="number" min={0} step="0.01"
+                    value={r.price}
+                    onChange={(e) => update(a.fruit.id, { price: e.target.value })}
+                    className="w-full border rounded px-2 py-1.5"
+                  />
+                </label>
+                <label className="flex-1 text-xs">
+                  <div className="text-muted mb-0.5">+/- สต็อก</div>
+                  <input
+                    type="number" step="0.01"
+                    placeholder="0"
+                    value={r.delta}
+                    onChange={(e) => update(a.fruit.id, { delta: e.target.value })}
+                    className="w-full border rounded px-2 py-1.5"
+                  />
+                </label>
+              </div>
+            </div>
+          );
+        })}
+        {activeFruits.length === 0 && (
+          <p className="text-center text-muted py-6">ยังไม่มีผลไม้ในสัปดาห์นี้</p>
+        )}
+      </div>
+
+      {/* Add fruit to week */}
+      {notAddedFruits.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <h2 className="font-bold mb-3">เพิ่มผลไม้เข้าสัปดาห์นี้</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <label className="block text-xs">
+              <div className="text-muted mb-0.5">ผลไม้</div>
+              <select
+                value={addDraft.fruit_id}
+                onChange={(e) => setAddDraft((d) => ({ ...d, fruit_id: e.target.value }))}
+                className="w-full border rounded px-2 py-2"
+              >
+                {notAddedFruits.map((f) => <option key={f.id} value={f.id}>{f.name_th}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs">
+              <div className="text-muted mb-0.5">สต็อกเริ่ม</div>
+              <input
+                type="number" min={0} step="0.01"
+                value={addDraft.qty}
+                onChange={(e) => setAddDraft((d) => ({ ...d, qty: e.target.value }))}
+                className="w-full border rounded px-2 py-2"
+              />
+            </label>
+            <label className="block text-xs">
+              <div className="text-muted mb-0.5">ราคา</div>
+              <input
+                type="number" min={0} step="0.01"
+                value={addDraft.price}
+                onChange={(e) => setAddDraft((d) => ({ ...d, price: e.target.value }))}
+                className="w-full border rounded px-2 py-2"
+              />
+            </label>
           </div>
+          <p className="text-xs text-muted mt-2">จะถูกบันทึกเมื่อกด "บันทึก"</p>
         </div>
-      ))}
-      <div className="sticky bottom-16 bg-surface py-2 flex items-center gap-3">
+      )}
+
+      {/* Save bar */}
+      <div className="sticky bottom-16 bg-surface py-2 flex items-center gap-3 z-10">
         <button onClick={save} disabled={busy} className="bg-brand text-white px-5 py-2 rounded disabled:opacity-60">
           {busy ? 'กำลังบันทึก...' : 'บันทึก'}
         </button>
