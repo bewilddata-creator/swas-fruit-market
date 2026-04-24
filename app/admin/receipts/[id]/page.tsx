@@ -26,12 +26,14 @@ export default async function ReceiptView({ params }: { params: { id: string } }
         )}
       </div>
       <ReceiptCard
+        receiptId={rec.id}
         shopName={shopName}
         customerName={rec.customer_name}
         createdAt={rec.created_at}
         items={(rec.items_json ?? []) as any}
         total={Number(rec.total)}
         voided={rec.status === 'void'}
+        hasBooking={!!rec.booking_id}
       />
     </div>
   );

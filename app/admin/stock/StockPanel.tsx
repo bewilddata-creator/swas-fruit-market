@@ -95,6 +95,11 @@ export function StockPanel({
       }
       setMsg('บันทึกแล้ว');
       setAddDrafts([]);
+      setRows((prev) => {
+        const next: Record<string, RowState> = {};
+        for (const [k, v] of Object.entries(prev)) next[k] = { ...v, delta: '' };
+        return next;
+      });
       router.refresh();
     } finally {
       setBusy(false);
