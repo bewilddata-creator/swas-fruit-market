@@ -7,10 +7,19 @@ export const dynamic = 'force-dynamic';
 async function getWeekTotals(sb: ReturnType<typeof supabaseAdmin>, weekId: string) {
   const [{ count: bookingCount }, { data: recs }] = await Promise.all([
     sb.from('bookings').select('id', { count: 'exact', head: true }).eq('week_id', weekId).in('status', ['pending', 'shipped']),
-    sb.from('receipts').select('total').eq('week_id', weekId).eq('status', 'active'),
+    sb.from('receipts').select('total, status').eq('week_id', weekId),
   ]);
-  const revenue = (recs ?? []).reduce((s, r: any) => s + Number(r.total), 0);
-  return { bookings: bookingCount ?? 0, revenue };
+  let revenue = 0;
+  let voidAmount = 0;
+  let voidCount = 0;
+  for (const r of recs ?? []) {
+    if ((r as any).status === 'active') revenue += Number(r.total);
+    else if ((r as any).status === 'void') {
+      voidAmount += Number(r.total);
+      voidCount += 1;
+    }
+  }
+  return { bookings: bookingCount ?? 0, revenue, voidAmount, voidCount };
 }
 
 export default async function HistoryPage() {
@@ -19,7 +28,7 @@ export default async function HistoryPage() {
   const active = (weeks ?? []).find((w) => w.is_active);
   const past = (weeks ?? []).filter((w) => !w.is_active);
 
-  let activeTotals = { bookings: 0, revenue: 0 };
+  let activeTotals = { bookings: 0, revenue: 0, voidAmount: 0, voidCount: 0 };
   let activeReceipts: any[] = [];
   if (active) {
     activeTotals = await getWeekTotals(sb, active.id);
@@ -63,12 +72,20 @@ export default async function HistoryPage() {
         <section>
           <h2 className="font-bold text-brand mb-2">สัปดาห์นี้ (กำลังเปิดขาย)</h2>
           <div className="bg-white rounded-lg shadow-sm p-4 mb-3">
-            <div className="flex items-center justify-between">
+            <div className="text-sm text-muted">เริ่ม {new Date(active.start_date).toLocaleDateString('th-TH')}</div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
               <div>
-                <div className="text-sm text-muted">เริ่ม {new Date(active.start_date).toLocaleDateString('th-TH')}</div>
-                <div className="font-bold mt-1">
-                  {activeTotals.bookings} รายการจอง · {activeTotals.revenue.toLocaleString()} บาท
-                </div>
+                <div className="text-xs text-muted">ยอดขายสุทธิ</div>
+                <div className="text-xl font-bold text-brand">{activeTotals.revenue.toLocaleString()}฿</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted">ยกเลิก</div>
+                <div className="text-xl font-bold text-danger">{activeTotals.voidAmount.toLocaleString()}฿</div>
+                <div className="text-[10px] text-muted">{activeTotals.voidCount} ใบ</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted">จอง</div>
+                <div className="text-xl font-bold">{activeTotals.bookings}</div>
               </div>
             </div>
           </div>

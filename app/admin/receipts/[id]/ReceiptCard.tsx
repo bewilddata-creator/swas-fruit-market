@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatThaiDate } from '@/lib/format';
 
 type Item = {
@@ -15,22 +16,51 @@ type Item = {
 };
 
 export function ReceiptCard({
+  receiptId,
   shopName,
   customerName,
   createdAt,
   items,
   total,
   voided,
+  hasBooking,
 }: {
+  receiptId: string;
   shopName: string;
   customerName: string;
   createdAt: string;
   items: Item[];
   total: number;
   voided: boolean;
+  hasBooking: boolean;
 }) {
+  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  async function cancelReceipt() {
+    const msg = hasBooking
+      ? 'ยกเลิกใบเสร็จนี้? การจองที่เชื่อมโยงจะถูกยกเลิก และสต็อกจะถูกคืน'
+      : 'ยกเลิกใบเสร็จนี้? สต็อกจะถูกคืน';
+    if (!confirm(msg)) return;
+    setCancelling(true);
+    try {
+      const r = await fetch(`/api/admin/receipts/${receiptId}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: 'void' }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        alert(d.error ?? 'ยกเลิกไม่สำเร็จ');
+        return;
+      }
+      router.refresh();
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   async function saveImage() {
     if (!ref.current) return;
@@ -117,9 +147,18 @@ export function ReceiptCard({
         >
           {busy ? 'กำลังสร้าง...' : '📷 บันทึกรูป'}
         </button>
+        {!voided && (
+          <button
+            onClick={cancelReceipt}
+            disabled={cancelling}
+            className="bg-danger/10 text-danger rounded px-4 py-2 disabled:opacity-60"
+          >
+            {cancelling ? 'กำลังยกเลิก...' : '🗑️ ยกเลิกใบเสร็จ'}
+          </button>
+        )}
       </div>
       <p className="text-center text-xs text-muted mt-2">
-        บนมือถือจะเปิดหน้าต่างแชร์ — กด "Save to Photos" / "บันทึกรูป"
+        บนมือถือ กด "บันทึกรูป" → เลือก "Save to Photos"
       </p>
     </div>
   );
