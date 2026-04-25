@@ -19,6 +19,27 @@ export default async function BookingsPage({ searchParams }: { searchParams: { s
   if (status !== 'all') q = q.eq('status', status);
   const { data } = await q.order('created_at', { ascending: false });
 
+  // Per-fruit pending summary (for Saturday prep)
+  const { data: pending } = await sb
+    .from('bookings')
+    .select('booking_items(fruit_id, qty, name_snapshot, fruits:fruit_id(stock_unit))')
+    .eq('week_id', week.id)
+    .eq('status', 'pending');
+  const summaryMap = new Map<string, { name: string; unit: string; qty: number }>();
+  for (const b of pending ?? []) {
+    for (const it of ((b as any).booking_items ?? []) as Array<any>) {
+      const key = it.fruit_id as string;
+      const cur = summaryMap.get(key) ?? {
+        name: it.name_snapshot as string,
+        unit: (it.fruits?.stock_unit as string) ?? '',
+        qty: 0,
+      };
+      cur.qty += Number(it.qty);
+      summaryMap.set(key, cur);
+    }
+  }
+  const summary = [...summaryMap.values()].sort((a, b) => b.qty - a.qty);
+
   const tabs = [
     { k: 'pending', label: 'รอดำเนินการ' },
     { k: 'shipped', label: 'ส่งแล้ว' },
@@ -32,6 +53,21 @@ export default async function BookingsPage({ searchParams }: { searchParams: { s
         <h1 className="text-2xl font-bold">รายการจอง</h1>
         <Link href="/admin/bookings/new" className="bg-brand text-white rounded px-4 py-2">+ จองใหม่</Link>
       </div>
+
+      {summary.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-3 mb-3">
+          <div className="text-xs text-muted mb-2">สรุปจองที่รอดำเนินการ</div>
+          <ul className="space-y-1 text-sm">
+            {summary.map((s, i) => (
+              <li key={i} className="flex items-baseline gap-2">
+                <span className="font-medium">{s.name}</span>
+                <span className="text-muted">·</span>
+                <span className="font-bold">{s.qty} {s.unit}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-3 text-sm overflow-x-auto">
         {tabs.map((t) => (
